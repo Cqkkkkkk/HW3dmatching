@@ -88,14 +88,13 @@ def rotation_matrix_2_quaternion(rotation_matrix):
     q2 = (R[0, 2] - R[2, 0]) / (4 * q0)
     q3 = (R[1, 0] - R[0, 1]) / (4 * q0)
     quaternion = np.array([q0, q1, q2, q3], dtype=np.float32)
-    print("四元数的模是{}".format(np.linalg.norm(quaternion)))
+    print("Norm of Quaternion: {}".format(np.linalg.norm(quaternion)))
     return quaternion
 
 
 def transform_quaternion(template_points, register_points):
     """
     计算两个点集之间的icp 配准
-    参考https://blog.csdn.net/hongbin_xu/article/details/80537100
     博客中的旋转矩阵写错了,需要按照论文里面的修改
     :param template_points: 模板点集 N 3
     :param register_points: 带配准点集 N 3
@@ -116,16 +115,16 @@ def transform_quaternion(template_points, register_points):
     Q[1:, 1:] = cov + cov.T - np.trace(cov)*np.eye(3)
     lambdas, vs = np.linalg.eig(Q)
     q = vs[:, np.argmax(lambdas)]
-    print("四元数是{}".format(q))
+    print("Quaternion: {}".format(q))
     rotation_matrix = quaternion_2_rotation_matrix(q)
     q_hat = rotation_matrix_2_quaternion(rotation_matrix)
-    print("反算的四元数是{}".format(q_hat))
-    print("旋转矩阵是{}".format(rotation_matrix))
+    print("Reversed Quaternion: {}".format(q_hat))
+    print("Rotation Matrix: {}".format(rotation_matrix))
     tranform_matrix = mean_template_points - rotation_matrix.dot(mean_register_points)
-    print("计算出来的平移向量是{}".format(tranform_matrix))
+    print("Shift Vector: {}".format(tranform_matrix))
     registered_points = rotation_matrix.dot(register_points.T).T + tranform_matrix
     error = np.mean(np.sqrt(np.sum(np.square(registered_points - template_points), axis=1)))
-    print("align error is {}".format(error))
+    print("Align Error :{}".format(error))
     R = rotation_matrix
     t = tranform_matrix[:, np.newaxis]
     return R, t, error
@@ -143,7 +142,7 @@ def print_statics(points):
     print("points mean var std is {}, {}, {}".format(test_points_mean, test_points_var, test_points_std))
 
 
-def update_correspondence(src, dst):
+def find_correspondence(src, dst):
     """
     build correspondence between src and dst
     :param src: template points N 3
@@ -191,7 +190,7 @@ def icp(template_points, register_points, ini_correspondence, method, max_iterat
         R, t, error = transform_svd(tem, data)
         for i in range(max_iteration):
             transformed_points = (R.dot(register_points.T) + t).T
-            correspondence, ind = update_correspondence(transformed_points, template_points)
+            correspondence, ind = find_correspondence(transformed_points, template_points)
             R, t, error = transform_svd(template_points, register_points[ind, :])
             if error < 0.1:
                 print("iteration {} stopped".format(i))
@@ -202,10 +201,10 @@ def icp(template_points, register_points, ini_correspondence, method, max_iterat
     if method == 'quaternion':
         tem, data = ini_correspondence
         R, t, error = transform_quaternion(tem, data)
-        pdb.set_trace()
+        # pdb.set_trace()
         for i in range(max_iteration):
             transformed_points = (R.dot(register_points.T) + t).T
-            correspondence, ind = update_correspondence(transformed_points, template_points)
+            correspondence, ind = find_correspondence(transformed_points, template_points)
             R, t, error = transform_quaternion(template_points, register_points[ind, :])
             if error < 0.1:
                 print("iteration {} stopped".format(i))
@@ -246,5 +245,5 @@ def test_1():
 
 if __name__ == "__main__":
     test()
-    test_1()
+    # test_1()
 
