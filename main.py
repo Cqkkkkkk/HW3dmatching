@@ -1,11 +1,11 @@
-import numpy as np
-import numpy as np
 import os
+import pdb
 import random
-from sklearn.neighbors import NearestNeighbors
-from scipy.optimize import minimize
-import matplotlib.pyplot as plt
+import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+from sklearn.neighbors import NearestNeighbors
 from utils import param2matrix, matrix2param, gen_loss_fn, warp_pts, gen_constraint
 
 
@@ -86,7 +86,9 @@ class PointCloudProcessor:
         trans_list = []
         trans_list.append(np.eye(N=4))
 
-        sample_num = int(pts2.shape[0]//100)
+        # Samples a subset of pts2 and find the corresponding points in pts1
+        # using the find_correspondence function
+        sample_num = int(pts2.shape[0] // 100)
         pts2 = np.array(random.sample(list(pts2), k=sample_num))
         cur_pmt1, cur_pmt2, _ = self.find_correspondence(
             corres_pts1=pts1,
@@ -94,6 +96,10 @@ class PointCloudProcessor:
             filter_thresh=filter_thresh
         )
         cur_pts2 = pts2
+
+        # Main function: A loop that iteratively finds the optimal transformation
+        # In each iteration, it defines a loss function as well as contraints, then
+        # use the minimize function to find the transformation that minimizes the loss
         for iter_idx in tqdm(range(0, max_iter)):
             args = (pts1, cur_pts2, cur_pmt1, cur_pmt2)
             loss_fn = gen_loss_fn(args=args)
@@ -105,12 +111,18 @@ class PointCloudProcessor:
                 method="SLSQP",
                 constraints=constraints
             )
+            pdb.set_trace()
             trans_list.append(param2matrix(res.x))
             loss_list.append(res.fun)
             print(f"iter time:{iter_idx} x:{res.x} fun:{res.fun}")
             # print(f"transform:{trans_list[-1]}")
+
+
             cur_pts2 = warp_pts(trans_list[-1], pts2)
 
+            # Adopt a nearest neighbor algorithm to find the closest points in pts1 for each point in pts2. 
+            # It returns the indices of these points and a mask indicating which points in pts2 have 
+            # a corresponding point in pts1 within the filter threshold.
             cur_pmt1, cur_pmt2, _ = self.find_correspondence(
                 corres_pts1=pts1,
                 corres_pts2=cur_pts2,
