@@ -30,6 +30,7 @@ class PointCloudProcessor:
                 filter_thresh=20,
                 name=f"icp_{i}"
             )
+            pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
         self.write_asc(self.final_asc, "result/final.asc")
@@ -79,7 +80,7 @@ class PointCloudProcessor:
         corres_pmt2 = np.where(dist_mask)[0].astype(np.int32)
         return corres_pmt1, corres_pmt2, dist_mask
 
-    def ICP_algorithm(self, pts1, pts2, filter_thresh=1000000, tol=1e-7, max_iter=25, save_fig=True, name="default"):
+    def ICP_algorithm(self, pts1, pts2, filter_thresh=1000000, tol=1e-7, max_iter=1, save_fig=True, name="default"):
         print("Solving ICP using iterative algorithm")
         print(f"PC1: {pts1.shape} PC2: {pts2.shape}")
         loss_list = []
@@ -111,7 +112,6 @@ class PointCloudProcessor:
                 method="SLSQP",
                 constraints=constraints
             )
-            pdb.set_trace()
             trans_list.append(param2matrix(res.x))
             loss_list.append(res.fun)
             print(f"iter time:{iter_idx} x:{res.x} fun:{res.fun}")
@@ -139,6 +139,7 @@ class PointCloudProcessor:
             plt.title(name)
             plt.savefig(save_path)
             plt.close()
+        pdb.set_trace()
         return trans_list[-1]
 
 
