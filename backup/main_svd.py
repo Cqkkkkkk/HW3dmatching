@@ -8,49 +8,14 @@ from scipy.spatial.transform import Rotation as R
 from utils import warp_pts
 
 
-def quaternion_based_icp(A, B, max_iterations=50, tolerance=1e-6):
-    """
-    Perform ICP using quaternion for rotation representation.
-    A and B are Nx3 matrices representing two point clouds.
-
-    Args:
-    A (numpy.ndarray): Source point cloud (Nx3).
-    B (numpy.ndarray): Target point cloud (Nx3).
-    max_iterations (int): Maximum number of iterations.
-    tolerance (float): Convergence tolerance.
-
-    Returns:
-    numpy.ndarray: Transformed source point cloud.
-    float: Final alignment error.
-    """
+def svd_based_icp(A, B, max_iterations=50, tolerance=1e-6):
     def nearest_neighbor(src, dst):
-        """
-        Find the nearest (Euclidean) neighbor in dst for each point in src.
-
-        Args:
-        src (numpy.ndarray): Source point cloud.
-        dst (numpy.ndarray): Destination point cloud.
-
-        Returns:
-        numpy.ndarray: The indices of the nearest neighbor in dst for each point in src.
-        """
         neigh = NearestNeighbors(n_neighbors=1)
         neigh.fit(dst)
         distances, indices = neigh.kneighbors(src, return_distance=True)
         return distances.ravel(), indices.ravel()
 
     def best_fit_transform(A, B):
-        """
-        Calculate the best fit transform that maps the points A onto points B.
-
-        Args:
-        A (numpy.ndarray): Source point cloud.
-        B (numpy.ndarray): Destination point cloud.
-
-        Returns:
-        numpy.ndarray: Rotation matrix (3x3).
-        numpy.ndarray: Translation vector (3x1).
-        """
         # Compute centroids
         centroid_A = np.mean(A, axis=0)
         centroid_B = np.mean(B, axis=0)
@@ -106,13 +71,6 @@ def quaternion_based_icp(A, B, max_iterations=50, tolerance=1e-6):
 
     # return A, mean_error
 
-# Example usage of the function (without real point cloud data)
-# A = np.random.rand(10, 3)  # Replace with actual point cloud data
-# B = np.random.rand(10, 3)  # Replace with actual point cloud data
-# transformed_A, error = quaternion_based_icp(A, B)
-# print("Transformed Point Cloud:", transformed_A)
-# print("Final Alignment Error:", error)
-
 
 class PointCloudProcessor:
     def __init__(self):
@@ -137,13 +95,13 @@ class PointCloudProcessor:
             )
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
-        self.write_asc(self.final_asc, "result/final.asc")
+        self.write_asc(self.final_asc, "result/svd/final.asc")
 
         for i in range(2, 1):
             other_pcd_path = f"data/C{i}.asc"
             other_pcd = self.read_asc(other_pcd_path)
             self.test_pcd = np.concatenate([self.test_pcd, other_pcd], axis=0)
-        self.write_asc(self.test_pcd, "result/init.asc")
+        self.write_asc(self.test_pcd, "result/svd/init.asc")
 
     # Assuming these are your methods, if not, you can remove them
     def read_asc(self, file_path):
@@ -171,7 +129,7 @@ class PointCloudProcessor:
         return True
 
     def ICP_algorithm(self, pts1, pts2, tol=1e-7, max_iter=25):
-        print("Solving ICP using quaternion-based approach")
+        print("Solving ICP using svd-based approach")
         print(f"PC1: {pts1.shape} PC2: {pts2.shape}")
 
 
@@ -182,7 +140,7 @@ class PointCloudProcessor:
         sampled_pts2 = sampled_pts2[:, :3]
 
         # Call to quaternion_based_icp
-        transformed_pts1, final_error = quaternion_based_icp(
+        transformed_pts1, final_error = svd_based_icp(
             pts1, 
             sampled_pts2, 
             max_iterations=max_iter, 
