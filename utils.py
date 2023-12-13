@@ -44,7 +44,7 @@ def extrac_rotation(T):
     return T[0:3, 0:3]
 
 def gen_loss_fn(args):
-    pts1, pts2, pmt1, pmt2 = args
+    pts1, pts2, chosen_pts1, chosen_pts2 = args
     def loss_fn(x):
         """
         Calculates the loss function for ICP.
@@ -57,8 +57,8 @@ def gen_loss_fn(args):
             float: The loss value.
         """
         fun_T = param2matrix(x)
-        chosen_pts1 = pts1[pmt1, :]
-        chosen_pts2 = pts2[pmt2, :]
+        # chosen_pts1 = pts1[pmt1, :]
+        # chosen_pts2 = pts2[pmt2, :]
         warp_pts2 = (fun_T@(chosen_pts2.T)).T
         loss = np.sum((chosen_pts1 - warp_pts2)**2)
         return loss
@@ -89,3 +89,15 @@ def gen_constraint():
 
 def warp_pts(T, pts):
     return (T@pts.T).T
+
+
+def quaternion_to_rotation_matrix(q):
+    rotation_matrix = np.array([[np.square(q[0]) + np.square(q[1]) - np.square(q[2]) - np.square(q[3]),
+                                 2 * (q[1] * q[2] - q[0] * q[3]), 2 * (q[1] * q[3] + q[0] * q[2])],
+                                [2 * (q[1] * q[2] + q[0] * q[3]),
+                                 np.square(q[0]) - np.square(q[1]) + np.square(q[2]) - np.square(q[3]),
+                                 2 * (q[2] * q[3] - q[0] * q[1])],
+                                [2 * (q[1] * q[3] - q[0] * q[2]), 2 * (q[2] * q[3] + q[0] * q[1]),
+                                 np.square(q[0]) - np.square(q[1]) - np.square(q[2]) + np.square(q[3])]],
+                               dtype=np.float32)
+    return rotation_matrix

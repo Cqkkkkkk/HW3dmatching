@@ -8,36 +8,36 @@ from scipy.optimize import minimize
 from sklearn.neighbors import NearestNeighbors
 from utils import param2matrix, matrix2param, gen_loss_fn, warp_pts, gen_constraint
 from scipy.spatial.transform import Rotation as R
+from utils import quaternion_to_rotation_matrix
 
 
-def svd_method(template_pts, register_pts):
+def quaternion_method(template_pts, register_pts):
+        
+        template_pts = template_pts[:, :3]
+        register_pts = register_pts[:, :3]
+        row, col = template_pts.shape
+        mean_template_pts = np.mean(template_pts, axis=0)
+        mean_register_pts = np.mean(register_pts, axis=0)
+        cov = np.matmul((register_pts - mean_register_pts).T, (template_pts - mean_template_pts)) / row
+        A = cov - cov.T
+        delta = np.array([A[1, 2], A[2, 0], A[0, 1]], dtype=np.float32).T
+        Q = np.zeros((4, 4), dtype=np.float32)
+        Q[0, 0] = np.trace(cov)
+        Q[0, 1:] = delta
+        Q[1:, 0] = delta
+        Q[1:, 1:] = cov + cov.T - np.trace(cov) * np.eye(3)
+        lambdas, vecs = np.linalg.eig(Q)
+        q = vecs[:, np.argmax(lambdas)]
+        rotation_matrix = quaternion_to_rotation_matrix(q)
+        translation_matrix = mean_template_pts - np.matmul(rotation_matrix, mean_register_pts)
+        registered_points = np.matmul(rotation_matrix, register_pts.T).T + translation_matrix
+        error = np.mean(np.sqrt(np.sum(np.square(registered_points - template_pts), axis=1)))
 
-	template_pts = template_pts[:, :3]
-	register_pts = register_pts[:, :3]
-	row, col = template_pts.shape
-	weights = np.eye(row)
-	p = register_pts.T
-	q = template_pts.T
-	mean_p = np.dot(p, np.diagonal(weights).reshape(-1, 1)) / np.trace(weights)
-	mean_q = np.dot(q, np.diagonal(weights).reshape(-1, 1)) / np.trace(weights)
-	X = p - mean_p
-	Y = q - mean_q
-	S = np.matmul(np.matmul(X, weights), Y.T)
-	U, sigma, VT = np.linalg.svd(S)
-	det_V_Ut = np.linalg.det(np.matmul(VT.T, U.T))
-	diag_matrix = np.eye(3)
-	diag_matrix[2, 2] = det_V_Ut
-	rotation_matrix = np.matmul(np.matmul(VT.T, diag_matrix), U.T)
-	translation_matrix = mean_q - np.matmul(rotation_matrix, mean_p)
-	registered_pts = np.matmul(rotation_matrix, register_pts.T) + translation_matrix
-	error = np.mean(np.sqrt(np.sum(np.square(registered_pts.T - template_pts), axis=1)))
-	new_transform = np.zeros((4, 4))
-	new_transform[0:3, 0:3] = rotation_matrix
-	new_transform[:3, 3] = translation_matrix.T
-	new_transform[3, 3] = 1
-
-	return new_transform, error
-
+        new_transform = np.zeros((4, 4))
+        new_transform[0:3, 0:3] = rotation_matrix
+        new_transform[:3, 3] = translation_matrix.T
+        new_transform[3, 3] = 1
+        return new_transform, error
 
 class PointCloudProcessor:
     def __init__(self):
@@ -63,13 +63,13 @@ class PointCloudProcessor:
             # pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
-        self.write_asc(self.final_asc, "result/svd/final.asc")
+        self.write_asc(self.final_asc, "result/quaternion/final.asc")
 
         for i in range(2, 1):
             other_pcd_path = f"data/C{i}.asc"
             other_pcd = self.read_asc(other_pcd_path)
             self.test_pcd = np.concatenate([self.test_pcd, other_pcd], axis=0)
-        self.write_asc(self.test_pcd, "result/svd/init.asc")
+        self.write_asc(self.test_pcd, "result/quaternion/init.asc")
 
     # Assuming these are your methods, if not, you can remove them
     def read_asc(self, file_path):
@@ -132,7 +132,7 @@ class PointCloudProcessor:
        
         for iter_idx in tqdm(range(0, max_iter)):
             # pdb.set_trace()
-            new_transform, loss = svd_method(filtered_pts1, filtered_pts2)
+            new_transform, loss = quaternion_method(filtered_pts1, filtered_pts2)
 
             trans_list.append(new_transform)
             loss_list.append(loss)

@@ -2,74 +2,41 @@ import os
 import pdb
 import random
 import numpy as np
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 from sklearn.neighbors import NearestNeighbors
+from utils import param2matrix, matrix2param, gen_loss_fn, warp_pts, gen_constraint
 from scipy.spatial.transform import Rotation as R
 
-from utils import warp_pts
 
+def svd_method(template_pts, register_pts):
 
-def svd_based_icp(A, B, max_iterations=50, tolerance=1e-6):
-    def nearest_neighbor(src, dst):
-        neigh = NearestNeighbors(n_neighbors=1)
-        neigh.fit(dst)
-        distances, indices = neigh.kneighbors(src, return_distance=True)
-        return distances.ravel(), indices.ravel()
+	template_pts = template_pts[:, :3]
+	register_pts = register_pts[:, :3]
+	row, col = template_pts.shape
+	weights = np.eye(row)
+	p = register_pts.T
+	q = template_pts.T
+	mean_p = np.dot(p, np.diagonal(weights).reshape(-1, 1)) / np.trace(weights)
+	mean_q = np.dot(q, np.diagonal(weights).reshape(-1, 1)) / np.trace(weights)
+	X = p - mean_p
+	Y = q - mean_q
+	S = np.matmul(np.matmul(X, weights), Y.T)
+	U, sigma, VT = np.linalg.svd(S)
+	det_V_Ut = np.linalg.det(np.matmul(VT.T, U.T))
+	diag_matrix = np.eye(3)
+	diag_matrix[2, 2] = det_V_Ut
+	rotation_matrix = np.matmul(np.matmul(VT.T, diag_matrix), U.T)
+	translation_matrix = mean_q - np.matmul(rotation_matrix, mean_p)
+	registered_pts = np.matmul(rotation_matrix, register_pts.T) + translation_matrix
+	error = np.mean(np.sqrt(np.sum(np.square(registered_pts.T - template_pts), axis=1)))
+	new_transform = np.zeros((4, 4))
+	new_transform[0:3, 0:3] = rotation_matrix
+	new_transform[:3, 3] = translation_matrix.T
+	new_transform[3, 3] = 1
 
-    def best_fit_transform(A, B):
-        # Compute centroids
-        centroid_A = np.mean(A, axis=0)
-        centroid_B = np.mean(B, axis=0)
-        AA = A - centroid_A
-        BB = B - centroid_B
-
-        # Compute the covariance matrix
-        H = np.dot(AA.T, BB)
-        
-        # Compute the optimal rotation using singular value decomposition
-        U, S, Vt = np.linalg.svd(H)
-        R_mat = np.dot(Vt.T, U.T)
-
-        # Ensure the rotation matrix is right-handed (determinant = 1)
-        if np.linalg.det(R_mat) < 0:
-            Vt[-1, :] *= -1
-            R_mat = np.dot(Vt.T, U.T)
-
-        # Convert rotation matrix to quaternion
-        rotation = R.from_matrix(R_mat)
-        quat = rotation.as_quat()
-
-        # Compute the translation
-        translation = centroid_B.T - np.dot(R_mat, centroid_A.T)
-
-        return quat, translation
-
-    A = np.copy(A)
-    for i in range(max_iterations):
-        # Find the nearest neighbors between the current source and destination points
-        distances, indices = nearest_neighbor(A, B)
-
-        # Compute the transformation between the current source and nearest destination points
-        quat, trans = best_fit_transform(A, B[indices])
-
-        # Update the current source
-        # Note: Apply rotation as a quaternion and translation
-        A = np.dot(R.from_quat(quat).as_matrix(), A.T).T + trans
-
-        # Check for convergence
-        mean_error = np.mean(distances)
-        if mean_error < tolerance:
-            break
-
-    # Return the aligned source point cloud and the final error
-
-    final_rotation_matrix = R.from_quat(quat).as_matrix()
-    final_transformation_matrix = np.eye(4)
-    final_transformation_matrix[:3, :3] = final_rotation_matrix
-    final_transformation_matrix[:3, 3] = trans
-
-    return final_transformation_matrix, mean_error
-
-    # return A, mean_error
+	return new_transform, error
 
 
 class PointCloudProcessor:
@@ -87,12 +54,13 @@ class PointCloudProcessor:
             print(f"ICP registering point_cloud:{1} and point_cloud:{i}")
             regis_asc_path = f"data/C{i}.asc"
             regis_asc = self.read_asc(regis_asc_path)
-            regis_trans, _ = self.ICP_algorithm(
+            regis_trans = self.ICP_algorithm(
                 self.final_asc.copy(),
                 regis_asc.copy(),
                 filter_thresh=20,
                 name=f"icp_{i}"
             )
+            # pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
         self.write_asc(self.final_asc, "result/svd/final.asc")
@@ -128,28 +96,70 @@ class PointCloudProcessor:
         # print(f"total {points.shape[0]} number of points write to {file_path}")
         return True
 
-    def ICP_algorithm(self, pts1, pts2, tol=1e-7, max_iter=25):
-        print("Solving ICP using svd-based approach")
-        print(f"PC1: {pts1.shape} PC2: {pts2.shape}")
-
-
-        sample_num = int(pts2.shape[0] // 100)
-        sampled_pts2 = np.array(random.sample(list(pts2), k=sample_num))
-
-        pts1 = pts1[:, :3]
-        sampled_pts2 = sampled_pts2[:, :3]
-
-        # Call to quaternion_based_icp
-        transformed_pts1, final_error = svd_based_icp(
-            pts1, 
-            sampled_pts2, 
-            max_iterations=max_iter, 
-            tolerance=tol
+    def find_correspondence(self, corres_pts1, corres_pts2, filter_thresh=1000000):
+        neigh = NearestNeighbors(n_neighbors=1, radius=20)
+        neigh.fit(corres_pts1)
+        nbrs_dist, nbrs_idx = neigh.kneighbors(
+            X=corres_pts2,
+            n_neighbors=1,
+            return_distance=True
         )
+        dist_min, dist_argmin = nbrs_dist[:, 0], nbrs_idx[:, 0]
+        dist_mask = np.where(dist_min <= filter_thresh, True, False)
+        filtered_pts1_idx = dist_argmin[dist_mask].astype(np.int32)
+        filtered_pts2_idx = np.where(dist_mask)[0].astype(np.int32)
+        return corres_pts1[filtered_pts1_idx, :], corres_pts2[filtered_pts2_idx, :]
 
-        return transformed_pts1, final_error
+    def ICP_algorithm(self, pts1, pts2, filter_thresh=1000000, tol=1e-7, max_iter=25, save_fig=True, name="default"):
+        print("Solving ICP using iterative algorithm")
+        print(f"PC1: {pts1.shape} PC2: {pts2.shape}")
+        loss_list = []
+        trans_list = []
+        trans_list.append(np.eye(N=4))
+
+        # Samples a subset of pts2 and find the corresponding points in pts1
+        # using the find_correspondence function
+        sample_num = int(pts2.shape[0] // 100)
+        pts2 = np.array(random.sample(list(pts2), k=sample_num))
+
+        filtered_pts1, filtered_pts2 = self.find_correspondence(
+            corres_pts1=pts1,
+            corres_pts2=pts2,
+            filter_thresh=filter_thresh
+        )
+        cur_pts2 = pts2
+
+       
+        for iter_idx in tqdm(range(0, max_iter)):
+            # pdb.set_trace()
+            new_transform, loss = svd_method(filtered_pts1, filtered_pts2)
+
+            trans_list.append(new_transform)
+            loss_list.append(loss)
+
+            if loss < tol:
+                break
+            
+            cur_pts2 = warp_pts(new_transform, pts2)
+            # Adopt a nearest neighbor algorithm to find the closest points in pts1 for each point in pts2. 
+            # It returns the indices of these points and a mask indicating which points in pts2 have 
+            # a corresponding point in pts1 within the filter threshold.
+            filtered_pts1, filtered_pts2 = self.find_correspondence(pts1, cur_pts2)
+
+        # save fig
+        if save_fig:
+            save_path = f"result/{name}.png"
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            x = np.array(list(range(0, len(loss_list))))
+            y = np.array(loss_list)
+            plt.plot(x, y)
+            plt.title(name)
+            plt.savefig(save_path)
+            plt.close()
+        return trans_list[-1]
 
 
 if __name__ == '__main__':
     processor = PointCloudProcessor()
     processor.process_point_clouds()
+ 
