@@ -44,7 +44,7 @@ def extrac_rotation(T):
     return T[0:3, 0:3]
 
 def gen_loss_fn(args):
-    pts1, pts2, chosen_pts1, chosen_pts2 = args
+    chosen_pts1, chosen_pts2 = args
     def loss_fn(x):
         """
         Calculates the loss function for ICP.
@@ -57,8 +57,6 @@ def gen_loss_fn(args):
             float: The loss value.
         """
         fun_T = param2matrix(x)
-        # chosen_pts1 = pts1[pmt1, :]
-        # chosen_pts2 = pts2[pmt2, :]
         warp_pts2 = (fun_T@(chosen_pts2.T)).T
         loss = np.sum((chosen_pts1 - warp_pts2)**2)
         return loss

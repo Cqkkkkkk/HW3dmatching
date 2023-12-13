@@ -72,10 +72,9 @@ class QuaternionPointCloudProcessor(BasePointCloudProcessor):
 
             cur_pts2 = warp_pts(new_transform, pts2)
 
-            # Adopt a nearest neighbor algorithm to find the closest points in pts1 for each point in pts2.
-            # It returns the indices of these points and a mask indicating which points in pts2 have
-            # a corresponding point in pts1 within the filter threshold.
             filtered_pts1, filtered_pts2 = self.find_correspondence(
-                pts1, cur_pts2)
+                corres_pts1=pts1, 
+                corres_pts2=cur_pts2
+            )
             
         return trans_list[-1]
