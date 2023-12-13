@@ -1,4 +1,6 @@
+import random
 import numpy as np
+from tqdm import tqdm
 from sklearn.neighbors import NearestNeighbors
 
 from utils import warp_pts
@@ -76,6 +78,5 @@ class BasePointCloudProcessor:
         filtered_pts2_idx = np.where(dist_mask)[0].astype(np.int32)
         return corres_pts1[filtered_pts1_idx, :], corres_pts2[filtered_pts2_idx, :]
 
-
-    def ICP(self):
-        raise NotImplementedError
+    def sampling(self, pts, sample_num):
+        return np.array(random.sample(list(pts), k=sample_num))
