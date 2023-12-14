@@ -11,7 +11,8 @@ from methods.base import BasePointCloudProcessor
 
 
 class OptimizePointCloudProcessor(BasePointCloudProcessor):
-	def __init__(self):
+	def __init__(self, sampling='random'):
+		self.sampling = sampling
 		super().__init__(save_dir='result/optimize/')
 	
 	def optimize_method(self, pts1, pts2, trans_list):
@@ -33,8 +34,14 @@ class OptimizePointCloudProcessor(BasePointCloudProcessor):
 		trans_list = []
 		trans_list.append(np.eye(N=4))
 
-		sample_num = int(pts2.shape[0] // 100)
-		pts2 = self.sampling(pts2, sample_num=sample_num)
+		if self.sampling == 'random':
+			sample_num = int(pts2.shape[0] // 100)
+			pts2 = self.random_sampling(pts2, sample_num=sample_num)
+		elif self.sampling == 'voxel_grid':
+			pts2 = self.voxel_grid_downsampling(pts2, voxel_size=0.001)
+		else:
+			raise NotImplementedError
+		print(f"Sampled pts2.shape: {pts2.shape}")
 		
 		filtered_pts1, filtered_pts2 = self.find_correspondence(
 			corres_pts1=pts1,

@@ -78,5 +78,54 @@ class BasePointCloudProcessor:
         filtered_pts2_idx = np.where(dist_mask)[0].astype(np.int32)
         return corres_pts1[filtered_pts1_idx, :], corres_pts2[filtered_pts2_idx, :]
 
-    def sampling(self, pts, sample_num):
+    def random_sampling(self, pts, sample_num):
         return np.array(random.sample(list(pts), k=sample_num))
+    
+    def voxel_grid_downsampling(self, pts, voxel_size=50):
+        """
+        Downsample a point cloud using voxel grid downsampling.
+
+        :param point_cloud: A numpy array of shape (N, 3), where N is the number of points.
+        :param voxel_size: The size of the voxel in all three dimensions.
+        :return: Downsampled point cloud.
+        """
+        # Calculate the indices of each point in the grid
+        indices = np.floor(pts / voxel_size).astype(np.int32)
+
+        # Create a dictionary to hold points for each voxel
+        voxels = {}
+        for point, idx in zip(pts, indices):
+            key = tuple(idx)
+            if key in voxels:
+                voxels[key].append(point)
+            else:
+                voxels[key] = [point]
+
+        # Average the points in each voxel to create a downsampled point cloud
+        downsampled = np.array([np.mean(points, axis=0) for points in voxels.values()])
+
+        return downsampled
+    
+        
+    def farthest_point_sampling(self, pts, num_samples):
+        """
+        Sample a subset of points using Farthest Point Sampling (FPS) from a point cloud.
+
+        :param point_cloud: A numpy array of shape (N, 3), where N is the number of points.
+        :param num_samples: The number of points to sample.
+        :return: A numpy array of the sampled points.
+        """
+        N = pts.shape[0]
+        num_samples = min(num_samples, N)
+        indices = np.zeros(num_samples, dtype=np.int)
+        distances = np.full(N, np.inf)
+        farthest = np.random.randint(0, N)
+
+        for i in range(num_samples):
+            indices[i] = farthest
+            centroid = pts[farthest, :]
+            dist = np.sum((pts - centroid) ** 2, axis=1)
+            distances = np.minimum(distances, dist)
+            farthest = np.argmax(distances)
+
+        return pts[indices, :]
