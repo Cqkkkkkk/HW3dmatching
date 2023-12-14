@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 
 def param2matrix(x):
@@ -79,6 +80,12 @@ def rotation_constraint(x):
 
 
 def gen_constraint():
+    """
+    Generate a constraint for optimization.
+
+    Returns:
+        dict: A dictionary representing the constraint.
+    """
     constraint = ({
         "type": "eq", 
         "fun": rotation_constraint
@@ -86,16 +93,30 @@ def gen_constraint():
     return constraint
 
 def warp_pts(T, pts):
+    """
+    Applies a transformation matrix to a set of points.
+
+    Args:
+        T (numpy.ndarray): The transformation matrix.
+        pts (numpy.ndarray): The points to be transformed.
+
+    Returns:
+        numpy.ndarray: The transformed points.
+    """
     return (T@pts.T).T
 
 
 def quaternion_to_rotation_matrix(q):
-    rotation_matrix = np.array([[np.square(q[0]) + np.square(q[1]) - np.square(q[2]) - np.square(q[3]),
-                                 2 * (q[1] * q[2] - q[0] * q[3]), 2 * (q[1] * q[3] + q[0] * q[2])],
-                                [2 * (q[1] * q[2] + q[0] * q[3]),
-                                 np.square(q[0]) - np.square(q[1]) + np.square(q[2]) - np.square(q[3]),
-                                 2 * (q[2] * q[3] - q[0] * q[1])],
-                                [2 * (q[1] * q[3] - q[0] * q[2]), 2 * (q[2] * q[3] + q[0] * q[1]),
-                                 np.square(q[0]) - np.square(q[1]) - np.square(q[2]) + np.square(q[3])]],
-                               dtype=np.float32)
+    """
+    Converts a quaternion to a rotation matrix.
+
+    Args:
+        q (list): A list representing the quaternion [w, x, y, z].
+
+    Returns:
+        numpy.ndarray: A 3x3 rotation matrix.
+
+    """
+    rotation_matrix = Rotation.from_quat(np.roll(q, -1)).as_matrix()
+    
     return rotation_matrix
