@@ -14,7 +14,7 @@ from methods.base import BasePointCloudProcessor
 class SVDPointCloudProcessor(BasePointCloudProcessor):
 	def __init__(self, sampling='random'):
 		self.sampling = sampling
-		super().__init__(save_dir='result/svd/')
+		super().__init__(save_dir='result/svd/', save_name=sampling)
 
 	def svd_method(self, template_pts, register_pts):
 

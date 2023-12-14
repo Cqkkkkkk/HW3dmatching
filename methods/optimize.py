@@ -13,7 +13,7 @@ from methods.base import BasePointCloudProcessor
 class OptimizePointCloudProcessor(BasePointCloudProcessor):
 	def __init__(self, sampling='random'):
 		self.sampling = sampling
-		super().__init__(save_dir='result/optimize/')
+		super().__init__(save_dir='result/optimize/', save_name=sampling)
 	
 	def optimize_method(self, pts1, pts2, trans_list):
 		args = (pts1, pts2)

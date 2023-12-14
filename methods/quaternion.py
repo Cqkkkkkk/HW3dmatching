@@ -9,7 +9,7 @@ from utils import quaternion_to_rotation_matrix, warp_pts
 class QuaternionPointCloudProcessor(BasePointCloudProcessor):
 	def __init__(self, sampling='random'):
 		self.sampling = sampling
-		super().__init__(save_dir='result/quaternion/')
+		super().__init__(save_dir='result/quaternion/', save_name=sampling)
 
 	def quaternion_method(self, template_pts, register_pts):
 

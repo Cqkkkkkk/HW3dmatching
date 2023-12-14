@@ -7,7 +7,7 @@ from utils import warp_pts
 
 
 class BasePointCloudProcessor:
-    def __init__(self, save_dir='result/base/'):
+    def __init__(self, save_dir='result/base/', save_name='random'):
         self.init_asc_path = f"data/C1.asc"
         self.init_asc = self.read_asc(self.init_asc_path)
         self.cur_asc = self.init_asc.copy()
@@ -16,6 +16,7 @@ class BasePointCloudProcessor:
         self.init_pcd = self.read_asc(self.init_pcd_path)
         self.test_pcd = self.init_pcd.copy()
         self.save_dir = save_dir
+        self.save_name = save_name
 
     def process_point_clouds(self):
         for i in range(2, 11):
@@ -30,13 +31,13 @@ class BasePointCloudProcessor:
             # pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
-        self.write_asc(self.final_asc, f"{self.save_dir}/final.asc")
+        self.write_asc(self.final_asc, f"{self.save_dir}/final_{self.save_name}.asc")
 
         for i in range(2, 1):
             other_pcd_path = f"data/C{i}.asc"
             other_pcd = self.read_asc(other_pcd_path)
             self.test_pcd = np.concatenate([self.test_pcd, other_pcd], axis=0)
-        self.write_asc(self.test_pcd,  f"{self.save_dir}/init.asc")
+        self.write_asc(self.test_pcd,  f"{self.save_dir}/init_{self.save_name}.asc")
         print(f'Done! Results saved to {self.save_dir}')
 
     # Assuming these are your methods, if not, you can remove them
