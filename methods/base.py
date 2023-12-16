@@ -1,10 +1,12 @@
 import numpy as np
+from tqdm import tqdm
 from sklearn.neighbors import NearestNeighbors
 from utils import warp_pts, read_asc, write_asc
 from methods.sampling import random_sampling, voxel_grid_sampling, farthest_point_sampling
 
+
 class BasePointCloudProcessor:
-    def __init__(self, save_dir='result/base/', save_name='random'):
+    def __init__(self, save_dir='result/base/', sampling_mode='random'):
         self.init_asc_path = f"data/C1.asc"
         self.init_asc = read_asc(self.init_asc_path)
         self.cur_asc = self.init_asc.copy()
@@ -13,7 +15,8 @@ class BasePointCloudProcessor:
         self.init_pcd = read_asc(self.init_pcd_path)
         self.test_pcd = self.init_pcd.copy()
         self.save_dir = save_dir
-        self.save_name = save_name
+        self.save_name = sampling_mode
+        self.sampling_mode = sampling_mode
 
     def process_point_clouds(self):
         for i in range(2, 11):
@@ -52,7 +55,7 @@ class BasePointCloudProcessor:
         filtered_pts2_idx = np.where(dist_mask)[0].astype(np.int32)
         return pts1[filtered_pts1_idx, :], pts2[filtered_pts2_idx, :]
 
-    def icp(self, pts1, pts2, filter_threshold):
+    def icp_core_method(self, pts1, pts2, latest_transformation):
         raise NotImplementedError
 
     def sampling(self, pts, mode):
@@ -69,3 +72,34 @@ class BasePointCloudProcessor:
 
         return pts
 
+    def icp(self, pts1, pts2, filter_threshold=1000000, max_iter=25):
+        loss_list = []
+        trans_list = [np.eye(N=4)]
+        pts2 = self.sampling(pts=pts2, mode=self.sampling_mode)
+        print(f"Sampled pts2.shape: {pts2.shape}")
+
+        filtered_pts1, filtered_pts2 = self.find_correspondence(
+            pts1=pts1,
+            pts2=pts2,
+            filter_threshold=filter_threshold
+        )
+
+        for _ in tqdm(range(0, max_iter)):
+            new_transform, loss = self.icp_core_method(
+                pts1=filtered_pts1,
+                pts2=filtered_pts2,
+                latest_transformation=trans_list[-1]
+            )
+
+            trans_list.append(new_transform)
+            loss_list.append(loss)
+
+            cur_pts2 = warp_pts(new_transform, pts2)
+
+            filtered_pts1, filtered_pts2 = self.find_correspondence(
+                pts1=pts1,
+                pts2=cur_pts2,
+                filter_threshold=filter_threshold
+            )
+
+        return trans_list[-1]

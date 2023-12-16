@@ -5,13 +5,13 @@ from scipy.spatial.transform import Rotation
 def read_asc(file_path):
     with open(file_path, mode="r") as file:
         lines = file.readlines()
-        point_L = []
+        point_l = []
         lines = lines[2:]
         for line in lines:
             x, y, z = line.replace("\n", "").split(" ")
             x, y, z = float(x), float(y), float(z)
-            point_L.append([x, y, z, 1])
-        points = np.array(point_L)
+            point_l.append([x, y, z, 1])
+        points = np.array(point_l)
     # print(f"total {points.shape[0]} number of points read from {file_path}")
     return points
 
@@ -28,7 +28,6 @@ def write_asc(points, file_path):
     return True
 
 
-
 def param2matrix(x):
     """
     Convert a parameter vector to a 3D transformation matrix.
@@ -39,55 +38,57 @@ def param2matrix(x):
     Returns:
         numpy.ndarray: The transformation matrix of shape (4, 4).
     """
-    T = np.zeros(shape=[4, 4])
-    T[0:3, 0:4] = x.reshape([3, 4])
-    T[3, 3] = 1
-    return T
+    transformation = np.zeros(shape=[4, 4])
+    transformation[0:3, 0:4] = x.reshape([3, 4])
+    transformation[3, 3] = 1
+    return transformation
 
 
-def matrix2param(T):
+def matrix2param(transformation):
     """
     Converts a 3D transformation matrix to a parameter vector.
 
     Args:
-        T (numpy.ndarray): The 3D transformation matrix.
+        transformation (numpy.ndarray): The 3D transformation matrix.
 
     Returns:
         numpy.ndarray: The parameter vector obtained from the transformation matrix.
     """
-    x = T[0:3, 0:4].reshape([-1])
+    x = transformation[0:3, 0:4].reshape([-1])
     return x
 
 
-def extrac_rotation(T):
+def extract_rotation(transformation):
     """
     Extracts the rotation matrix from a transformation matrix.
 
     Parameters:
-    T (numpy.ndarray): The transformation matrix.
+    transformation (numpy.ndarray): The transformation matrix.
 
     Returns:
     numpy.ndarray: The rotation matrix.
     """
-    return T[0:3, 0:3]
+    return transformation[0:3, 0:3]
+
 
 def gen_loss_fn(args):
-    chosen_pts1, chosen_pts2 = args
+    pts1, pts2 = args
+
     def loss_fn(x):
         """
         Calculates the loss function for ICP.
 
         Args:
             x (numpy.ndarray): The parameter vector of shape (12,).
-            args (tuple): The arguments passed to the loss function.
 
         Returns:
             float: The loss value.
         """
-        fun_T = param2matrix(x)
-        warp_pts2 = (fun_T@(chosen_pts2.T)).T
-        loss = np.sum((chosen_pts1 - warp_pts2)**2)
+        fun_transformation = param2matrix(x)
+        warp_pts2 = (fun_transformation @ pts2.T).T
+        loss = np.sum((pts1 - warp_pts2) ** 2)
         return loss
+
     return loss_fn
 
 
@@ -101,9 +102,9 @@ def rotation_constraint(x):
     Returns:
         float: The constraint value.
     """
-    T = param2matrix(x)
-    R = extrac_rotation(T)
-    return np.sum(R@R.T - np.eye(3))**2
+    transformation = param2matrix(x)
+    rotation = extract_rotation(transformation)
+    return np.sum(rotation @ rotation.T - np.eye(3)) ** 2
 
 
 def gen_constraint():
@@ -114,36 +115,37 @@ def gen_constraint():
         dict: A dictionary representing the constraint.
     """
     constraint = ({
-        "type": "eq", 
+        "type": "eq",
         "fun": rotation_constraint
     })
     return constraint
 
-def warp_pts(T, pts):
+
+def warp_pts(transformation, pts):
     """
     Applies a transformation matrix to a set of points.
 
     Args:
-        T (numpy.ndarray): The transformation matrix.
+        transformation (numpy.ndarray): The transformation matrix.
         pts (numpy.ndarray): The points to be transformed.
 
     Returns:
         numpy.ndarray: The transformed points.
     """
-    return (T@pts.T).T
+    return (transformation @ pts.T).T
 
 
-def quaternion_to_rotation_matrix(q):
+def quaternion_to_rotation_matrix(quaternion):
     """
     Converts a quaternion to a rotation matrix.
 
     Args:
-        q (list): A list representing the quaternion [w, x, y, z].
+        quaternion (list): A list representing the quaternion [w, x, y, z].
 
     Returns:
         numpy.ndarray: A 3x3 rotation matrix.
 
     """
-    rotation_matrix = Rotation.from_quat(np.roll(q, -1)).as_matrix()
-    
+    rotation_matrix = Rotation.from_quat(np.roll(quaternion, -1)).as_matrix()
+
     return rotation_matrix
