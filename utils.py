@@ -2,6 +2,33 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 
+def read_asc(file_path):
+    with open(file_path, mode="r") as file:
+        lines = file.readlines()
+        point_L = []
+        lines = lines[2:]
+        for line in lines:
+            x, y, z = line.replace("\n", "").split(" ")
+            x, y, z = float(x), float(y), float(z)
+            point_L.append([x, y, z, 1])
+        points = np.array(point_L)
+    # print(f"total {points.shape[0]} number of points read from {file_path}")
+    return points
+
+
+def write_asc(points, file_path):
+    with open(file_path, mode="w") as file:
+        file.write("# Geomagic Studio\n")
+        file.write("# New Model\n")
+        points_num = points.shape[0]
+        for p_idx in range(0, points_num):
+            pos = points[p_idx]
+            file.write(f"{pos[0]:.7f} {pos[1]:.7f} {pos[2]:.7f}\n")
+    # print(f"total {points.shape[0]} number of points write to {file_path}")
+    return True
+
+
+
 def param2matrix(x):
     """
     Convert a parameter vector to a 3D transformation matrix.

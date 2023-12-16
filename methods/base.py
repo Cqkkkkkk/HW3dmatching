@@ -1,19 +1,16 @@
-import random
 import numpy as np
-from tqdm import tqdm
 from sklearn.neighbors import NearestNeighbors
-
-from utils import warp_pts
-
+from utils import warp_pts, read_asc, write_asc
+from methods.sampling import random_sampling, voxel_grid_sampling, farthest_point_sampling
 
 class BasePointCloudProcessor:
     def __init__(self, save_dir='result/base/', save_name='random'):
         self.init_asc_path = f"data/C1.asc"
-        self.init_asc = self.read_asc(self.init_asc_path)
+        self.init_asc = read_asc(self.init_asc_path)
         self.cur_asc = self.init_asc.copy()
         self.final_asc = self.cur_asc.copy()
         self.init_pcd_path = f"data/C1.asc"
-        self.init_pcd = self.read_asc(self.init_pcd_path)
+        self.init_pcd = read_asc(self.init_pcd_path)
         self.test_pcd = self.init_pcd.copy()
         self.save_dir = save_dir
         self.save_name = save_name
@@ -22,111 +19,53 @@ class BasePointCloudProcessor:
         for i in range(2, 11):
             print(f"ICP registering point_cloud:{1} and point_cloud:{i}")
             regis_asc_path = f"data/C{i}.asc"
-            regis_asc = self.read_asc(regis_asc_path)
-            regis_trans = self.ICP(
+            regis_asc = read_asc(regis_asc_path)
+            regis_trans = self.icp(
                 self.final_asc.copy(),
                 regis_asc.copy(),
-                filter_thresh=20,
+                filter_threshold=20,
             )
             # pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
-        self.write_asc(self.final_asc, f"{self.save_dir}/final_{self.save_name}.asc")
+        write_asc(self.final_asc, f"{self.save_dir}/final_{self.save_name}.asc")
 
         for i in range(2, 1):
             other_pcd_path = f"data/C{i}.asc"
-            other_pcd = self.read_asc(other_pcd_path)
+            other_pcd = read_asc(other_pcd_path)
             self.test_pcd = np.concatenate([self.test_pcd, other_pcd], axis=0)
-        self.write_asc(self.test_pcd,  f"{self.save_dir}/init_{self.save_name}.asc")
+        write_asc(self.test_pcd, f"{self.save_dir}/init_{self.save_name}.asc")
         print(f'Done! Results saved to {self.save_dir}')
 
-    # Assuming these are your methods, if not, you can remove them
-    def read_asc(self, file_path):
-        with open(file_path, mode="r") as file:
-            lines = file.readlines()
-            point_L = []
-            lines = lines[2:]
-            for line in lines:
-                x, y, z = line.replace("\n", "").split(" ")
-                x, y, z = float(x), float(y), float(z)
-                point_L.append([x, y, z, 1])
-            points = np.array(point_L)
-        # print(f"total {points.shape[0]} number of points read from {file_path}")
-        return points
-
-    def write_asc(self, points, file_path):
-        with open(file_path, mode="w") as file:
-            file.write("# Geomagic Studio\n")
-            file.write("# New Model\n")
-            points_num = points.shape[0]
-            for p_idx in range(0, points_num):
-                pos = points[p_idx]
-                file.write(f"{pos[0]:.7f} {pos[1]:.7f} {pos[2]:.7f}\n")
-        # print(f"total {points.shape[0]} number of points write to {file_path}")
-        return True
-
-    def find_correspondence(self, corres_pts1, corres_pts2, filter_thresh=1000000):
-        neigh = NearestNeighbors(n_neighbors=1, radius=20)
-        neigh.fit(corres_pts1)
-        nbrs_dist, nbrs_idx = neigh.kneighbors(
-            X=corres_pts2,
+    @staticmethod
+    def find_correspondence(pts1, pts2, filter_threshold=1000000):
+        nearest_neighbor = NearestNeighbors(n_neighbors=1, radius=20)
+        nearest_neighbor.fit(pts1)
+        neighbor_distance, neighbor_index = nearest_neighbor.kneighbors(
+            X=pts2,
             n_neighbors=1,
             return_distance=True
         )
-        dist_min, dist_argmin = nbrs_dist[:, 0], nbrs_idx[:, 0]
-        dist_mask = np.where(dist_min <= filter_thresh, True, False)
-        filtered_pts1_idx = dist_argmin[dist_mask].astype(np.int32)
+        distance_min, distance_arg_min = neighbor_distance[:, 0], neighbor_index[:, 0]
+        dist_mask = np.where(distance_min <= filter_threshold, True, False)
+        filtered_pts1_idx = distance_arg_min[dist_mask].astype(np.int32)
         filtered_pts2_idx = np.where(dist_mask)[0].astype(np.int32)
-        return corres_pts1[filtered_pts1_idx, :], corres_pts2[filtered_pts2_idx, :]
+        return pts1[filtered_pts1_idx, :], pts2[filtered_pts2_idx, :]
 
-    def random_sampling(self, pts, sample_num):
-        return np.array(random.sample(list(pts), k=sample_num))
-    
-    def voxel_grid_downsampling(self, pts, voxel_size=50):
-        """
-        Downsample a point cloud using voxel grid downsampling.
+    def icp(self, pts1, pts2, filter_threshold):
+        raise NotImplementedError
 
-        :param point_cloud: A numpy array of shape (N, 3), where N is the number of points.
-        :param voxel_size: The size of the voxel in all three dimensions.
-        :return: Downsampled point cloud.
-        """
-        # Calculate the indices of each point in the grid
-        indices = np.floor(pts / voxel_size).astype(np.int32)
+    def sampling(self, pts, mode):
+        if mode == 'random':
+            num_samples = int(pts.shape[0] // 100)
+            pts = random_sampling(pts, num_samples=num_samples)
+        elif mode == 'voxel_grid':
+            pts = voxel_grid_sampling(pts, voxel_size=0.001)
+        elif mode == 'farthest':
+            num_samples = int(pts.shape[0] // 100)
+            pts = farthest_point_sampling(pts, num_samples=num_samples)
+        else:
+            raise NotImplementedError
 
-        # Create a dictionary to hold points for each voxel
-        voxels = {}
-        for point, idx in zip(pts, indices):
-            key = tuple(idx)
-            if key in voxels:
-                voxels[key].append(point)
-            else:
-                voxels[key] = [point]
+        return pts
 
-        # Average the points in each voxel to create a downsampled point cloud
-        downsampled = np.array([np.mean(points, axis=0) for points in voxels.values()])
-
-        return downsampled
-    
-        
-    def farthest_point_sampling(self, pts, num_samples):
-        """
-        Sample a subset of points using Farthest Point Sampling (FPS) from a point cloud.
-
-        :param point_cloud: A numpy array of shape (N, 3), where N is the number of points.
-        :param num_samples: The number of points to sample.
-        :return: A numpy array of the sampled points.
-        """
-        N = pts.shape[0]
-        num_samples = min(num_samples, N)
-        indices = np.zeros(num_samples, dtype=np.int)
-        distances = np.full(N, np.inf)
-        farthest = np.random.randint(0, N)
-
-        for i in range(num_samples):
-            indices[i] = farthest
-            centroid = pts[farthest, :]
-            dist = np.sum((pts - centroid) ** 2, axis=1)
-            distances = np.minimum(distances, dist)
-            farthest = np.argmax(distances)
-
-        return pts[indices, :]

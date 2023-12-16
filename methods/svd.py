@@ -1,22 +1,18 @@
-import os
-import pdb
-import random
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-from sklearn.neighbors import NearestNeighbors
-from utils import param2matrix, matrix2param, gen_loss_fn, warp_pts, gen_constraint
-from scipy.spatial.transform import Rotation as R
+
+from utils import warp_pts
 from methods.base import BasePointCloudProcessor
+from methods.sampling import random_sampling, voxel_grid_sampling, farthest_point_sampling
 
 
 class SVDPointCloudProcessor(BasePointCloudProcessor):
-	def __init__(self, sampling='random'):
-		self.sampling = sampling
-		super().__init__(save_dir='result/svd/', save_name=sampling)
+	def __init__(self, sampling_mode='random'):
+		self.sampling_mode = sampling_mode
+		super().__init__(save_dir='result/svd/', save_name=sampling_mode)
 
-	def svd_method(self, template_pts, register_pts):
+	@staticmethod
+	def svd_method(template_pts, register_pts):
 
 		template_pts = template_pts[:, :3]
 		register_pts = register_pts[:, :3]
@@ -28,14 +24,14 @@ class SVDPointCloudProcessor(BasePointCloudProcessor):
 			weights).reshape(-1, 1)) / np.trace(weights)
 		mean_q = np.dot(q, np.diagonal(
 			weights).reshape(-1, 1)) / np.trace(weights)
-		X = p - mean_p
-		Y = q - mean_q
-		S = np.matmul(np.matmul(X, weights), Y.T)
-		U, sigma, VT = np.linalg.svd(S)
-		det_V_Ut = np.linalg.det(np.matmul(VT.T, U.T))
+		x_matrix = p - mean_p
+		y_matrix = q - mean_q
+		s_matrix = np.matmul(np.matmul(x_matrix, weights), y_matrix.T)
+		u_matrix, sigma, v_matrix = np.linalg.svd(s_matrix)
+		det_v_ut = np.linalg.det(np.matmul(v_matrix.T, u_matrix.T))
 		diag_matrix = np.eye(3)
-		diag_matrix[2, 2] = det_V_Ut
-		rotation_matrix = np.matmul(np.matmul(VT.T, diag_matrix), U.T)
+		diag_matrix[2, 2] = det_v_ut
+		rotation_matrix = np.matmul(np.matmul(v_matrix.T, diag_matrix), u_matrix.T)
 		translation_matrix = mean_q - np.matmul(rotation_matrix, mean_p)
 		registered_pts = np.matmul(
 			rotation_matrix, register_pts.T) + translation_matrix
@@ -48,30 +44,21 @@ class SVDPointCloudProcessor(BasePointCloudProcessor):
 
 		return new_transform, error
 
-	def ICP(self, pts1, pts2, filter_thresh=1000000, tol=1e-7, max_iter=25):
+	def icp(self, pts1, pts2, filter_threshold=1000000, tol=1e-7, max_iter=25):
 		loss_list = []
-		trans_list = []
-		trans_list.append(np.eye(N=4))
+		trans_list = [np.eye(N=4)]
 
 		# Samples a subset of pts2 and find the corresponding points in pts1
-		# using the find_correspondence function
-		if self.sampling == 'random':
-			sample_num = int(pts2.shape[0] // 100)
-			pts2 = self.random_sampling(pts2, sample_num=sample_num)
-		elif self.sampling == 'voxel_grid':
-			pts2 = self.voxel_grid_downsampling(pts2, voxel_size=0.001)
-		else:
-			raise NotImplementedError
+		pts2 = self.sampling(pts=pts2, mode=self.sampling_mode)
+		print(f"Sampled pts2.shape: {pts2.shape}")
 
 		filtered_pts1, filtered_pts2 = self.find_correspondence(
-			corres_pts1=pts1,
-			corres_pts2=pts2,
-			filter_thresh=filter_thresh
+			pts1=pts1,
+			pts2=pts2,
+			filter_threshold=filter_threshold
 		)
-		cur_pts2 = pts2
 
-		for iter_idx in tqdm(range(0, max_iter)):
-			# pdb.set_trace()
+		for _ in tqdm(range(0, max_iter)):
 			new_transform, loss = self.svd_method(filtered_pts1, filtered_pts2)
 
 			trans_list.append(new_transform)
@@ -81,10 +68,10 @@ class SVDPointCloudProcessor(BasePointCloudProcessor):
 				break
 
 			cur_pts2 = warp_pts(new_transform, pts2)
-			# Adopt a nearest neighbor algorithm to find the closest points in pts1 for each point in pts2.
-			# It returns the indices of these points and a mask indicating which points in pts2 have
-			# a corresponding point in pts1 within the filter threshold.
 			filtered_pts1, filtered_pts2 = self.find_correspondence(
-				pts1, cur_pts2)
+				pts1=pts1,
+				pts2=cur_pts2,
+				filter_threshold=filter_threshold
+			)
 
 		return trans_list[-1]
