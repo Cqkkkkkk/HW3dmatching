@@ -6,6 +6,34 @@ from methods.sampling import random_sampling, voxel_grid_sampling, farthest_poin
 
 
 class BasePointCloudProcessor:
+    """
+    Base class for processing point clouds.
+
+    Args:
+        save_dir (str): Directory to save the results. Default is 'result/base/'.
+        sampling_mode (str): Mode for sampling points. Default is 'random'.
+
+    Attributes:
+        init_asc_path (str): Path to the initial ASC file.
+        init_asc (np.ndarray): Initial ASC data.
+        cur_asc (np.ndarray): Current ASC data.
+        final_asc (np.ndarray): Final ASC data.
+        init_pcd_path (str): Path to the initial PCD file.
+        init_pcd (np.ndarray): Initial PCD data.
+        test_pcd (np.ndarray): Test PCD data.
+        save_dir (str): Directory to save the results.
+        save_name (str): Name of the saved file.
+        sampling_mode (str): Mode for sampling points.
+
+    Methods:
+        process_point_clouds: Process the point clouds.
+        find_correspondence: Find correspondences between two sets of points.
+        icp_core_method: Core method for ICP (Iterative Closest Point) algorithm.
+        sampling: Perform point sampling based on the specified mode.
+        icp: Perform ICP registration between two point clouds.
+
+    """
+
     def __init__(self, save_dir='result/base/', sampling_mode='random'):
         self.init_asc_path = f"data/C1.asc"
         self.init_asc = read_asc(self.init_asc_path)
@@ -19,6 +47,9 @@ class BasePointCloudProcessor:
         self.sampling_mode = sampling_mode
 
     def process_point_clouds(self):
+        """
+        Process the point clouds by performing ICP registration and saving the results.
+        """
         for i in range(2, 11):
             print(f"ICP registering point_cloud:{1} and point_cloud:{i}")
             regis_asc_path = f"data/C{i}.asc"
@@ -42,6 +73,18 @@ class BasePointCloudProcessor:
 
     @staticmethod
     def find_correspondence(pts1, pts2, filter_threshold=1000000):
+        """
+        Find correspondences between two sets of points.
+
+        Args:
+            pts1 (np.ndarray): First set of points.
+            pts2 (np.ndarray): Second set of points.
+            filter_threshold (float): Distance threshold for filtering correspondences. Default is 1000000.
+
+        Returns:
+            np.ndarray: Filtered points from pts1.
+            np.ndarray: Filtered points from pts2.
+        """
         nearest_neighbor = NearestNeighbors(n_neighbors=1, radius=20)
         nearest_neighbor.fit(pts1)
         neighbor_distance, neighbor_index = nearest_neighbor.kneighbors(
@@ -56,9 +99,35 @@ class BasePointCloudProcessor:
         return pts1[filtered_pts1_idx, :], pts2[filtered_pts2_idx, :]
 
     def icp_core_method(self, pts1, pts2, latest_transformation):
+        """
+        Core method for the ICP (Iterative Closest Point) algorithm.
+
+        Args:
+            pts1 (np.ndarray): First set of points.
+            pts2 (np.ndarray): Second set of points.
+            latest_transformation (np.ndarray): Latest transformation matrix.
+
+        Raises:
+            NotImplementedError: This method should be implemented in the derived class.
+
+        """
         raise NotImplementedError
 
     def sampling(self, pts, mode):
+        """
+        Perform point sampling based on the specified mode.
+
+        Args:
+            pts (np.ndarray): Set of points.
+            mode (str): Sampling mode.
+
+        Returns:
+            np.ndarray: Sampled points.
+
+        Raises:
+            NotImplementedError: The specified sampling mode is not implemented.
+
+        """
         if mode == 'random':
             num_samples = int(pts.shape[0] // 100)
             pts = random_sampling(pts, num_samples=num_samples)
@@ -73,6 +142,19 @@ class BasePointCloudProcessor:
         return pts
 
     def icp(self, pts1, pts2, filter_threshold=1000000, max_iter=25):
+        """
+        Perform ICP (Iterative Closest Point) registration between two point clouds.
+
+        Args:
+            pts1 (np.ndarray): First point cloud.
+            pts2 (np.ndarray): Second point cloud.
+            filter_threshold (float): Distance threshold for filtering correspondences. Default is 1000000.
+            max_iter (int): Maximum number of iterations. Default is 25.
+
+        Returns:
+            np.ndarray: Transformation matrix.
+
+        """
         loss_list = []
         trans_list = [np.eye(N=4)]
         pts2 = self.sampling(pts=pts2, mode=self.sampling_mode)

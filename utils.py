@@ -3,44 +3,63 @@ from scipy.spatial.transform import Rotation
 
 
 def read_asc(file_path):
+    """
+    Read an ASC file and return the points as a numpy array.
+
+    Parameters:
+    file_path (str): The path to the ASC file.
+
+    Returns:
+    numpy.ndarray: An array containing the x, y, z coordinates of the points.
+    """
     with open(file_path, mode="r") as file:
-        lines = file.readlines()
-        point_l = []
-        lines = lines[2:]
-        for line in lines:
-            x, y, z = line.replace("\n", "").split(" ")
-            x, y, z = float(x), float(y), float(z)
-            point_l.append([x, y, z, 1])
-        points = np.array(point_l)
-    # print(f"total {points.shape[0]} number of points read from {file_path}")
+        # Skip the first two lines and read the rest
+        lines = file.readlines()[2:]
+    # Process lines to extract x, y, z coordinates and convert them to floats
+    point_l = [[float(coord) for coord in line.strip().split(" ")] + [1] for line in lines]
+    points = np.array(point_l)
     return points
 
 
 def write_asc(points, file_path):
+    """
+    Write the given points to a file in ASC format.
+
+    Args:
+        points (list): List of 3D points.
+        file_path (str): Path to the output file.
+
+    Returns:
+        bool: True if the file was successfully written, False otherwise.
+    """
     with open(file_path, mode="w") as file:
         file.write("# Geomagic Studio\n")
         file.write("# New Model\n")
-        points_num = points.shape[0]
-        for p_idx in range(0, points_num):
-            pos = points[p_idx]
+        for pos in points:
             file.write(f"{pos[0]:.7f} {pos[1]:.7f} {pos[2]:.7f}\n")
-    # print(f"total {points.shape[0]} number of points write to {file_path}")
     return True
 
 
 def param2matrix(x):
     """
-    Convert a parameter vector to a 3D transformation matrix.
+    Convert a 1D array of 12 elements into a 4x4 transformation matrix.
 
     Args:
-        x (numpy.ndarray): The parameter vector of shape (12,).
+        x (numpy.ndarray): Input array of shape (12,) containing the transformation parameters.
 
     Returns:
-        numpy.ndarray: The transformation matrix of shape (4, 4).
+        numpy.ndarray: The resulting 4x4 transformation matrix.
+
+    Raises:
+        ValueError: If the input array does not have 12 elements.
     """
-    transformation = np.zeros(shape=[4, 4])
-    transformation[0:3, 0:4] = x.reshape([3, 4])
+    if x.size != 12:
+        raise ValueError("Input array must have 12 elements.")
+
+    transformation = np.zeros((4, 4))
+    transformation[0:3, 0:4] = x.reshape((3, 4))
     transformation[3, 3] = 1
+
     return transformation
 
 
@@ -54,8 +73,7 @@ def matrix2param(transformation):
     Returns:
         numpy.ndarray: The parameter vector obtained from the transformation matrix.
     """
-    x = transformation[0:3, 0:4].reshape([-1])
-    return x
+    return transformation[0:3, 0:4].reshape([-1])
 
 
 def extract_rotation(transformation):
@@ -72,6 +90,16 @@ def extract_rotation(transformation):
 
 
 def gen_loss_fn(args):
+    """
+    Generates a loss function for ICP.
+
+    Args:
+        args (tuple): A tuple containing two numpy arrays, pts1 and pts2.
+
+    Returns:
+        function: The loss function.
+
+    """
     pts1, pts2 = args
 
     def loss_fn(x):
@@ -146,6 +174,5 @@ def quaternion_to_rotation_matrix(quaternion):
         numpy.ndarray: A 3x3 rotation matrix.
 
     """
-    rotation_matrix = Rotation.from_quat(np.roll(quaternion, -1)).as_matrix()
 
-    return rotation_matrix
+    return Rotation.from_quat(np.roll(quaternion, -1)).as_matrix()
