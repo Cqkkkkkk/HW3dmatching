@@ -1,3 +1,5 @@
+import time
+import tracemalloc
 import numpy as np
 from tqdm import tqdm
 from sklearn.neighbors import NearestNeighbors
@@ -50,18 +52,26 @@ class BasePointCloudProcessor:
         """
         Process the point clouds by performing ICP registration and saving the results.
         """
+        total_time = 0
         for i in range(2, 11):
             print(f"ICP registering point_cloud:{1} and point_cloud:{i}")
             regis_asc_path = f"data/C{i}.asc"
             regis_asc = read_asc(regis_asc_path)
+            start_time = time.time()
+            tracemalloc.start()
             regis_trans = self.icp(
                 self.final_asc.copy(),
                 regis_asc.copy(),
                 filter_threshold=20,
             )
+            end_time = time.time()
+            print(f"ICP registering point_cloud:{1} and point_cloud:{i} takes {end_time - start_time} seconds")
+            print(tracemalloc.get_traced_memory())
+            total_time += end_time - start_time
             # pdb.set_trace()
             warp_asc = warp_pts(regis_trans, pts=regis_asc)
             self.final_asc = np.concatenate([self.final_asc, warp_asc], axis=0)
+        print(f"ICP registering takes {total_time} seconds")
         write_asc(self.final_asc, f"{self.save_dir}/final_{self.save_name}.asc")
 
         for i in range(2, 1):

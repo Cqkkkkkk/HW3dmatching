@@ -1,0 +1,234 @@
+Now doing ICP with optimize method. Sampling mode: random
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (40280, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 30.08630657196045 seconds
+(20929046, 192934933)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (41144, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 63.17572355270386 seconds
+(170902449, 430736704)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (37760, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 81.1471996307373 seconds
+(198769985, 469815217)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (40504, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 116.17206144332886 seconds
+(230926062, 517150612)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41764, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 130.37149786949158 seconds
+(270340277, 564007933)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (39104, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 142.145516872406 seconds
+(297575904, 611981057)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (42900, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 169.6886260509491 seconds
+(333168832, 690014820)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (36452, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 196.66307830810547 seconds
+(359589217, 773584112)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (46376, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 220.54482769966125 seconds
+(400424705, 860329635)
+ICP registering takes 1149.9948379993439 seconds
+Done! Results saved to result/optimize/
+Now doing ICP with quaternion method. Sampling mode: random
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (40280, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 27.46670413017273 seconds
+(214043525, 860329635)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (41144, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 55.37015414237976 seconds
+(279180987, 860329635)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (37760, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 75.7793481349945 seconds
+(310078330, 860329635)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (40504, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 109.19255948066711 seconds
+(339775037, 860329635)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41764, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 127.78973269462585 seconds
+(375383825, 860329635)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (39104, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 139.07062435150146 seconds
+(407677329, 860329635)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (42900, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 166.2865333557129 seconds
+(439868976, 860329635)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (36452, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 193.0030288696289 seconds
+(472067094, 888486610)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (46376, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 217.2792308330536 seconds
+(504010424, 976208796)
+ICP registering takes 1111.2379159927368 seconds
+Done! Results saved to result/quaternion/
+Now doing ICP with SVD method. Sampling mode: random
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (40280, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 49.50129842758179 seconds
+(214045457, 13272495254)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (41144, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 77.95799827575684 seconds
+(279192977, 13933575887)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (37760, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 97.36689639091492 seconds
+(310090418, 13933575887)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (40504, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 133.27141046524048 seconds
+(339786711, 13933575887)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41764, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 146.30002546310425 seconds
+(375394366, 14537179483)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (39104, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 161.44502544403076 seconds
+(407687870, 14537179483)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (42900, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 182.91993522644043 seconds
+(439879518, 15436977147)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (36452, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 191.64089226722717 seconds
+(472077636, 15436977147)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (46376, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 218.1838743686676 seconds
+(504020965, 18050831042)
+ICP registering takes 1321.5873563289642 seconds
+Done! Results saved to result/svd/
+Now doing ICP with optimize method. Sampling mode: voxel_grid
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (41328, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 31.910375595092773 seconds
+(251325025, 18050831042)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (33998, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 54.72802686691284 seconds
+(309898768, 18050831042)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (33835, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 71.67105293273926 seconds
+(340650296, 18050831042)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (39191, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 106.45899844169617 seconds
+(375145389, 18050831042)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41489, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 134.87685799598694 seconds
+(412812217, 18050831042)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (42461, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 131.8096890449524 seconds
+(445976632, 18050831042)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (35800, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 160.36955428123474 seconds
+(472199793, 18050831042)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (34829, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 188.5606827735901 seconds
+(503527856, 18050831042)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (43743, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 214.55651760101318 seconds
+(543458131, 18050831042)
+ICP registering takes 1094.9417555332184 seconds
+Done! Results saved to result/optimize/
+Now doing ICP with quaternion method. Sampling mode: voxel_grid
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (41328, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 28.609951734542847 seconds
+(214195669, 18050831042)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (33998, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 50.18058776855469 seconds
+(279340616, 18050831042)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (33835, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 68.06666851043701 seconds
+(310239823, 18050831042)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (39191, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 98.27405047416687 seconds
+(339947561, 18050831042)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41489, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 110.09888172149658 seconds
+(375555368, 18050831042)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (42461, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 130.19088077545166 seconds
+(407848944, 18050831042)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (35800, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 148.6311433315277 seconds
+(440040519, 18050831042)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (34829, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 177.87110471725464 seconds
+(472238672, 18050831042)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (43743, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 207.38411712646484 seconds
+(504181930, 18050831042)
+ICP registering takes 1019.3073861598969 seconds
+Done! Results saved to result/quaternion/
+Now doing ICP with SVD method. Sampling mode: voxel_grid
+ICP registering point_cloud:1 and point_cloud:2
+Sampled pts2.shape: (41328, 4)
+ICP registering point_cloud:1 and point_cloud:2 takes 55.8517849445343 seconds
+(214210404, 18050831042)
+ICP registering point_cloud:1 and point_cloud:3
+Sampled pts2.shape: (33998, 4)
+ICP registering point_cloud:1 and point_cloud:3 takes 67.99507403373718 seconds
+(279353453, 18050831042)
+ICP registering point_cloud:1 and point_cloud:4
+Sampled pts2.shape: (33835, 4)
+ICP registering point_cloud:1 and point_cloud:4 takes 87.40905570983887 seconds
+(310251301, 18050831042)
+ICP registering point_cloud:1 and point_cloud:5
+Sampled pts2.shape: (39191, 4)
+ICP registering point_cloud:1 and point_cloud:5 takes 118.71046566963196 seconds
+(339947718, 18050831042)
+ICP registering point_cloud:1 and point_cloud:6
+Sampled pts2.shape: (41489, 4)
+ICP registering point_cloud:1 and point_cloud:6 takes 146.31146597862244 seconds
+(375555274, 18050831042)
+ICP registering point_cloud:1 and point_cloud:7
+Sampled pts2.shape: (42461, 4)
+ICP registering point_cloud:1 and point_cloud:7 takes 160.65943908691406 seconds
+(407848826, 18050831042)
+ICP registering point_cloud:1 and point_cloud:8
+Sampled pts2.shape: (35800, 4)
+ICP registering point_cloud:1 and point_cloud:8 takes 175.22434735298157 seconds
+(440040477, 18050831042)
+ICP registering point_cloud:1 and point_cloud:9
+Sampled pts2.shape: (34829, 4)
+ICP registering point_cloud:1 and point_cloud:9 takes 203.32986164093018 seconds
+(472238605, 18050831042)
+ICP registering point_cloud:1 and point_cloud:10
+Sampled pts2.shape: (43743, 4)
+ICP registering point_cloud:1 and point_cloud:10 takes 236.0768280029297 seconds
+(504180614, 18050831042)
+ICP registering takes 1251.5683224201202 seconds
+Done! Results saved to result/svd/
